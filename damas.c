@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TRUE       1
 #define FALSE      0
+#define TRUE       1
 
 #define LINHA      8
 #define COLUNA     8
@@ -12,34 +12,73 @@
 #define PECA_B    'B'
 #define SEM_PECA  ' '
 
+int iMovimentosPossiveis       (char *origem);
 
+void vExibirTabuleiroTurno     ();
+void vIniciaTabuleiro          ();
+void vTrocarTurnos             ();
+void vExibirTabuleiro          ();
+void vMoverPeca                (char *origem, char *destino);
+void vApagarMovimentosPossiveis(char *origem);
+void vLimparSelecao            (char *peca);
 
-void vExibirTabuleiro();
-void vIniciaTabuleiro();
-void vTrocarTurnos   ();
-char *piSelecionarPeca(int sequencia);
+char *piSelecionarPeca         (int sequencia);
+char *pcDestino                (int escolha);
+
 
 char gacTabuleiro[LINHA][COLUNA];
-char cTurno = PECA_B;
+char gcTurno = PECA_B;
 
 
 
 //====================================================
 int main(){
+    int  iMovimentos;
+
     char szEntrada[64];
+    char *pOrigem;
 
     vIniciaTabuleiro();//declara o tabuleiro
-    while (TRUE)
+    while(TRUE)//game loop
     {
-        do{//game loop
-        vExibirTabuleiro();//mostra o tabuleiro no terminal
+        do{
+            system("clear");
+            vExibirTabuleiroTurno();//mostra o tabuleiro no terminal
+            
+            printf("DIGITE 'Q' PARA SAIR:\n");
+            fgets(szEntrada, sizeof(szEntrada), stdin);
+            if(szEntrada[0] == 'q' || szEntrada[0] == 'Q')
+                return 0;
         
-        printf("DIGITE 'Q' PARA SAIR:\n");
-        fgets(szEntrada, sizeof(szEntrada), stdin);
-        if(szEntrada[0] == 'q' || szEntrada[0] == 'Q')
-            return 0;
+        }while(atoi(szEntrada) < 1 || atoi(szEntrada) > 12);
 
-        }while (atoi(szEntrada) < 1 || atoi(szEntrada) > 12);
+        pOrigem = piSelecionarPeca(atoi(szEntrada));
+
+        do{
+            iMovimentos = 0;
+
+            if((iMovimentos = iMovimentosPossiveis(pOrigem)) == 0) break;
+
+            vExibirTabuleiro();
+            fgets(szEntrada, sizeof(szEntrada), stdin);
+            
+            if(atoi(szEntrada) >= 1 && atoi(szEntrada) <= iMovimentos) break;
+
+            vApagarMovimentosPossiveis(pOrigem);
+       
+        }while(TRUE);
+
+        //seleciona outra peça sem for uma invalida(sem movimentos)
+        if(!iMovimentos){
+            vLimparSelecao(pOrigem); 
+            continue; 
+        }
+
+        vMoverPeca(pOrigem, pcDestino(atoi(szEntrada)));
+        vExibirTabuleiro();
+
+        // *(piSelecionarPeca(atoi(szEntrada)) - COLUNA) = 'X';
+
 //===================continuar====================================
         // printf("%c | 0X%X\n", *piSelecionarPeca(atoi(szEntrada)), piSelecionarPeca(atoi(szEntrada)));
         // fgets(szEntrada, sizeof(szEntrada), stdin);
@@ -56,34 +95,104 @@ int main(){
 
 
         vTrocarTurnos();
-        system("clear");
+        system("clear"); 
     }
     
     
     return 0;
 }
-//====================================================
+//=================cotinuar==================================
+//logiga de escolha chumbada9
 
+char *pcDestino(int escolha){  
+    int ii;
+    int jj;
+
+    for(ii = 0; ii<LINHA; ii++)
+        for(jj = 0; jj<LINHA; jj++)
+            if(gacTabuleiro[ii][jj] == ('0' + escolha)) return &gacTabuleiro[ii][jj];
+    
+    return NULL;
+}
+//goto
+int iMovimentosPossiveis(char *origem){
+    char *pcInicioTabuleiro = &gacTabuleiro[0][0];
+
+    int iBorda = (origem - pcInicioTabuleiro) % 8;
+    int ii = 1;
+    
+
+
+    if(gcTurno == PECA_B){
+        if(iBorda != 0 && *(origem - (COLUNA+1)) == SEM_PECA)
+            *(origem - (COLUNA+1)) = '0'+ii++;
+        if(iBorda != 7 && *(origem - (COLUNA-1)) == SEM_PECA)
+            *(origem - (COLUNA-1)) = '0'+ii++;
+    }
+    else{
+        if(iBorda != 0 && *(origem + (COLUNA-1)) == SEM_PECA)
+            *(origem + (COLUNA-1)) = '0'+ii++; 
+        if(iBorda != 7 && *(origem + (COLUNA+1)) == SEM_PECA)
+            *(origem + (COLUNA+1)) = '0'+ii++;
+    }
+
+    
+    
+    return ii-1;
+}
+
+void vApagarMovimentosPossiveis(char *origem){
+    if(gcTurno == PECA_B){
+        if(*(origem - (COLUNA+1)) != PECA_B && *(origem - (COLUNA+1)) != PECA_P)
+            *(origem - (COLUNA+1)) = SEM_PECA;
+        if(*(origem - (COLUNA-1)) != PECA_B && *(origem - (COLUNA-1)) != PECA_P)
+            *(origem - (COLUNA-1)) = SEM_PECA;
+    }
+    else{
+        if(*(origem + (COLUNA-1)) != PECA_B && *(origem + (COLUNA-1)) != PECA_P)
+            *(origem + (COLUNA-1)) = SEM_PECA;
+        if(*(origem + (COLUNA+1)) != PECA_B && *(origem + (COLUNA+1)) != PECA_P)
+            *(origem + (COLUNA+1)) = SEM_PECA;
+    }
+
+    
+
+}
+
+void vMoverPeca(char *origem, char *destino){
+    vApagarMovimentosPossiveis(origem);
+    *destino = gcTurno;
+    *origem  = SEM_PECA;
+
+
+}
+
+void vLimparSelecao(char *peca){
+    *peca = gcTurno;
+}
 
 char *piSelecionarPeca(int sequencia){
-
     int ii;
     int jj;
     int ik = 0;
 
     for(ii = 0; ii<LINHA; ii++){
         for(jj = 0; jj<COLUNA; jj++){
-            if(cTurno == gacTabuleiro[ii][jj]) ik++;
-            if(sequencia == ik)
+            if(gcTurno == gacTabuleiro[ii][jj]) ik++;
+            if(sequencia == ik){
+                gacTabuleiro[ii][jj] = 'X';
                 return &gacTabuleiro[ii][jj];
+            }
         }
     }
 
     return NULL;
 }
+
 void vTrocarTurnos(){
-    cTurno = (cTurno == PECA_P) ? PECA_B: PECA_P; 
+    gcTurno = (gcTurno == PECA_P) ? PECA_B: PECA_P; 
 }
+
 char cObterConteudoCasa(char cCor, int iL, int iC){
     if(iL == 3 || iL == 4) return SEM_PECA;
    
@@ -94,6 +203,7 @@ char cObterConteudoCasa(char cCor, int iL, int iC){
         return (iC % 2) == 0 ? cCor  : SEM_PECA;
     
 }
+
 void vIniciaTabuleiro(){
     int ii;
     int jj;
@@ -108,21 +218,35 @@ void vIniciaTabuleiro(){
         }
     }
 }
+
 void vExibirTabuleiro(){
     int ii;
     int jj;
     int ik = 1;
-    
+
     for(ii = 0; ii<LINHA; ii++){
         for(jj = 0; jj<COLUNA; jj++)
             printf("|%c%c|", gacTabuleiro[ii][jj], ' ');
         
         printf("\n");       
     }
+}
+
+void vExibirTabuleiroTurno(){
+    int ii;
+    int jj;
+    int ik = 1;
+    
+    for(ii = 0; ii<LINHA; ii++){
+        for(jj = 0; jj<COLUNA; jj++) 
+            printf("|%c%c|", gacTabuleiro[ii][jj], ' ');
+            
+        printf("\n");       
+    }
     printf("\n");
     for(ii = 0; ii<LINHA; ii++){
         for(jj = 0; jj<COLUNA; jj++){
-            if(cTurno == gacTabuleiro[ii][jj])
+            if(gcTurno == gacTabuleiro[ii][jj])
                 printf("|%02i|", ik++);
             else
                 printf("|%c%c|", gacTabuleiro[ii][jj], ' ');
@@ -132,6 +256,18 @@ void vExibirTabuleiro(){
     }
 
 
-    printf("TURNO DAS: %s\n", (cTurno == PECA_P)? "PRETAS": "BRANCAS");
+    printf("TURNO DAS: %s\n", (gcTurno == PECA_P)? "PRETAS": "BRANCAS");
 
 }
+/*
+
+|  ||01||  ||02||  ||03||  ||04|
+|05||  ||06||  ||07||  ||08||  |
+|  ||  ||  ||09||  ||10||  ||11|
+|12||  ||  ||  ||  ||  ||  ||B |
+|  ||x ||  ||B ||  ||  ||  ||  |
+|  ||  ||  ||  ||B ||  ||B ||  |
+|  ||B ||  ||B ||  ||B ||  ||B |
+|B ||  ||B ||  ||B ||  ||B ||  |
+
+*/
