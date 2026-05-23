@@ -2,30 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <damas.h>
 
-#define FALSE      0
-#define TRUE       1
-
-#define LINHA      8
-#define COLUNA     8
-#define PECAS_COR 12
-#define PECA_P    'P'
-#define PECA_B    'B'
-#define SEM_PECA  ' '
-
-int iMovimentosPossiveis       (char *origem, int iQtdMovimentos);
-
-void vExibirTabuleiroTurno     ();
-void vIniciaTabuleiro          ();
-void vTrocarTurnos             ();
-void vExibirTabuleiro          ();
-void vMoverPeca                (char *origem, char *destino);
-void vApagarMovimentosPossiveis(char *origem);
-void vLimparSelecao            (char *peca);
-void vApagarPecasInimigas      (char *origem, char *destino);
-
-char *piSelecionarPeca         (int sequencia);
-char *pcDestino                (int escolha);
 
 
 char gacTabuleiro[LINHA][COLUNA];
@@ -64,7 +42,7 @@ int main(){
             vExibirTabuleiro();
             fgets(szEntrada, sizeof(szEntrada), stdin);
             
-            if(atoi(szEntrada) >= 1 && atoi(szEntrada) < iMovimentos) break;
+            if(atoi(szEntrada) >= 1 && atoi(szEntrada) <= iMovimentos) break;
 
             vApagarMovimentosPossiveis(pOrigem);
        
@@ -121,33 +99,54 @@ char *pcDestino(int escolha){
 //função recursiva
 int iMovimentosPossiveis(char *origem, int iQtdMovimentos){
     char *pcInicioTabuleiro = &gacTabuleiro[0][0];
+    char *pcDiagonal1       = NULL;
+    char *pcDiagonal2       = NULL;
 
     int iBorda = (origem - pcInicioTabuleiro) % 8;
+    int iDiag1 = COLUNA + 1;
+    int iDiag2 = COLUNA - 1;
     
 
     if(gcTurno == PECA_B){
-        if(iBorda != 0 && *(origem - (COLUNA + 1)) == SEM_PECA)
-            *(origem - (COLUNA + 1)) = '0'+iQtdMovimentos++;
-        else if(*(origem - (COLUNA + 1)) == PECA_P && *origem != PECA_P)
-            iQtdMovimentos = iMovimentosPossiveis(origem - (COLUNA + 1), iQtdMovimentos);
-            //iQtdMovimentos = iMovimentosPossiveis(origem - (COLUNA + 1), iQtdMovimentos);
-        if(iBorda != 7 && *(origem - (COLUNA - 1)) == SEM_PECA)
-            *(origem - (COLUNA - 1)) = '0'+iQtdMovimentos++;
-        else if(*(origem - (COLUNA - 1)) == PECA_P && *origem != PECA_P)
-            iQtdMovimentos = iMovimentosPossiveis(origem - (COLUNA - 1), iQtdMovimentos);
+
+        pcDiagonal1 = (origem - iDiag1);
+        pcDiagonal2 = (origem - iDiag2);
+
+        if(iBorda != 0 && *pcDiagonal1 == SEM_PECA)
+            *pcDiagonal1 = '0'+iQtdMovimentos++;
+        else if(*pcDiagonal1 == PECA_P && *origem != PECA_P){
+            iBorda = (pcDiagonal1 - pcInicioTabuleiro) % 8;
+            if(iBorda != 0 && *(pcDiagonal1 - iDiag1) == SEM_PECA)
+                *(pcDiagonal1 - iDiag1) = '0'+iQtdMovimentos++;
+        }
+        if(iBorda != 7 && *(pcDiagonal2) == SEM_PECA)
+            *(pcDiagonal2) = '0'+iQtdMovimentos++;
+        else if(*(pcDiagonal2) == PECA_P && *origem != PECA_P){
+            iBorda = (pcDiagonal2 - pcInicioTabuleiro) % 8;
+            if(iBorda != 7 && *(pcDiagonal2 - iDiag2) == SEM_PECA)
+                *(pcDiagonal2 - iDiag2) = '0'+iQtdMovimentos++;
+        }
     }
     else{
-        if(iBorda != 0 && *(origem + (COLUNA - 1)) == SEM_PECA)
-            *(origem + (COLUNA - 1)) = '0'+iQtdMovimentos++;
-        else if(*(origem + (COLUNA - 1)) == PECA_B && *origem != PECA_B)
-            iQtdMovimentos = iMovimentosPossiveis(origem + (COLUNA - 1), iQtdMovimentos); 
-        if(iBorda != 7 && *(origem + (COLUNA + 1)) == SEM_PECA)
-            *(origem + (COLUNA + 1)) = '0'+iQtdMovimentos++;
-        else if(*(origem + (COLUNA + 1)) == PECA_B && *origem != PECA_B)
-            iQtdMovimentos = iMovimentosPossiveis(origem + (COLUNA + 1), iQtdMovimentos);
-    }
+        pcDiagonal1 = (origem + iDiag1);
+        pcDiagonal2 = (origem + iDiag2);
 
-    return iQtdMovimentos;
+        if(iBorda != 0 && *(pcDiagonal2) == SEM_PECA)
+            *(pcDiagonal2) = '0'+iQtdMovimentos++;
+        else if(*(pcDiagonal2) == PECA_B && *origem != PECA_B){
+            iBorda = (pcDiagonal2 - pcInicioTabuleiro) % 8;
+            if(iBorda != 0 && *(pcDiagonal2 + iDiag2) == SEM_PECA)
+                *(pcDiagonal2 + iDiag2) = '0'+iQtdMovimentos++;
+        } 
+        if(iBorda != 7 && *(pcDiagonal1) == SEM_PECA)
+            *(pcDiagonal1) = '0'+iQtdMovimentos++;
+        else if(*(pcDiagonal1) == PECA_B && *origem != PECA_B){
+            iBorda = (pcDiagonal1 - pcInicioTabuleiro) % 8;
+            if(iBorda != 7 && *(pcDiagonal1 + iDiag1) == SEM_PECA)
+                *(pcDiagonal1 + iDiag1) = '0'+iQtdMovimentos++;
+        }
+    }
+    return iQtdMovimentos - 1;
 }
 
 void vApagarMovimentosPossiveis(char *origem){
