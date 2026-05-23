@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define FALSE      0
 #define TRUE       1
@@ -12,7 +13,7 @@
 #define PECA_B    'B'
 #define SEM_PECA  ' '
 
-int iMovimentosPossiveis       (char *origem);
+int iMovimentosPossiveis       (char *origem, int iQtdMovimentos);
 
 void vExibirTabuleiroTurno     ();
 void vIniciaTabuleiro          ();
@@ -21,6 +22,7 @@ void vExibirTabuleiro          ();
 void vMoverPeca                (char *origem, char *destino);
 void vApagarMovimentosPossiveis(char *origem);
 void vLimparSelecao            (char *peca);
+void vApagarPecasInimigas      (char *origem, char *destino);
 
 char *piSelecionarPeca         (int sequencia);
 char *pcDestino                (int escolha);
@@ -57,12 +59,12 @@ int main(){
         do{
             iMovimentos = 0;
 
-            if((iMovimentos = iMovimentosPossiveis(pOrigem)) == 0) break;
+            if((iMovimentos = iMovimentosPossiveis(pOrigem, 1)) == 0) break;
 
             vExibirTabuleiro();
             fgets(szEntrada, sizeof(szEntrada), stdin);
             
-            if(atoi(szEntrada) >= 1 && atoi(szEntrada) <= iMovimentos) break;
+            if(atoi(szEntrada) >= 1 && atoi(szEntrada) < iMovimentos) break;
 
             vApagarMovimentosPossiveis(pOrigem);
        
@@ -104,6 +106,7 @@ int main(){
 //=================cotinuar==================================
 //logiga de escolha chumbada9
 
+
 char *pcDestino(int escolha){  
     int ii;
     int jj;
@@ -115,54 +118,86 @@ char *pcDestino(int escolha){
     return NULL;
 }
 //goto
-int iMovimentosPossiveis(char *origem){
+//função recursiva
+int iMovimentosPossiveis(char *origem, int iQtdMovimentos){
     char *pcInicioTabuleiro = &gacTabuleiro[0][0];
 
     int iBorda = (origem - pcInicioTabuleiro) % 8;
-    int ii = 1;
     
-
 
     if(gcTurno == PECA_B){
-        if(iBorda != 0 && *(origem - (COLUNA+1)) == SEM_PECA)
-            *(origem - (COLUNA+1)) = '0'+ii++;
-        if(iBorda != 7 && *(origem - (COLUNA-1)) == SEM_PECA)
-            *(origem - (COLUNA-1)) = '0'+ii++;
+        if(iBorda != 0 && *(origem - (COLUNA + 1)) == SEM_PECA)
+            *(origem - (COLUNA + 1)) = '0'+iQtdMovimentos++;
+        else if(*(origem - (COLUNA + 1)) == PECA_P && *origem != PECA_P)
+            iQtdMovimentos = iMovimentosPossiveis(origem - (COLUNA + 1), iQtdMovimentos);
+            //iQtdMovimentos = iMovimentosPossiveis(origem - (COLUNA + 1), iQtdMovimentos);
+        if(iBorda != 7 && *(origem - (COLUNA - 1)) == SEM_PECA)
+            *(origem - (COLUNA - 1)) = '0'+iQtdMovimentos++;
+        else if(*(origem - (COLUNA - 1)) == PECA_P && *origem != PECA_P)
+            iQtdMovimentos = iMovimentosPossiveis(origem - (COLUNA - 1), iQtdMovimentos);
     }
     else{
-        if(iBorda != 0 && *(origem + (COLUNA-1)) == SEM_PECA)
-            *(origem + (COLUNA-1)) = '0'+ii++; 
-        if(iBorda != 7 && *(origem + (COLUNA+1)) == SEM_PECA)
-            *(origem + (COLUNA+1)) = '0'+ii++;
+        if(iBorda != 0 && *(origem + (COLUNA - 1)) == SEM_PECA)
+            *(origem + (COLUNA - 1)) = '0'+iQtdMovimentos++;
+        else if(*(origem + (COLUNA - 1)) == PECA_B && *origem != PECA_B)
+            iQtdMovimentos = iMovimentosPossiveis(origem + (COLUNA - 1), iQtdMovimentos); 
+        if(iBorda != 7 && *(origem + (COLUNA + 1)) == SEM_PECA)
+            *(origem + (COLUNA + 1)) = '0'+iQtdMovimentos++;
+        else if(*(origem + (COLUNA + 1)) == PECA_B && *origem != PECA_B)
+            iQtdMovimentos = iMovimentosPossiveis(origem + (COLUNA + 1), iQtdMovimentos);
     }
 
-    
-    
-    return ii-1;
+    return iQtdMovimentos;
 }
 
 void vApagarMovimentosPossiveis(char *origem){
     if(gcTurno == PECA_B){
-        if(*(origem - (COLUNA+1)) != PECA_B && *(origem - (COLUNA+1)) != PECA_P)
-            *(origem - (COLUNA+1)) = SEM_PECA;
-        if(*(origem - (COLUNA-1)) != PECA_B && *(origem - (COLUNA-1)) != PECA_P)
-            *(origem - (COLUNA-1)) = SEM_PECA;
+        if(*(origem - (COLUNA + 1)) != PECA_B && *(origem - (COLUNA + 1)) != PECA_P)
+            *(origem - (COLUNA + 1)) = SEM_PECA;
+        else if(*(origem - (COLUNA + 1)) == PECA_P)
+            vApagarMovimentosPossiveis((origem - (COLUNA + 1)));
+        if(*(origem - (COLUNA - 1)) != PECA_B && *(origem - (COLUNA - 1)) != PECA_P)
+            *(origem - (COLUNA - 1)) = SEM_PECA;
+        else if(*(origem - (COLUNA - 1)) == PECA_P)
+            vApagarMovimentosPossiveis((origem - (COLUNA - 1)));
     }
     else{
-        if(*(origem + (COLUNA-1)) != PECA_B && *(origem + (COLUNA-1)) != PECA_P)
-            *(origem + (COLUNA-1)) = SEM_PECA;
-        if(*(origem + (COLUNA+1)) != PECA_B && *(origem + (COLUNA+1)) != PECA_P)
-            *(origem + (COLUNA+1)) = SEM_PECA;
+        if(*(origem + (COLUNA - 1)) != PECA_B && *(origem + (COLUNA - 1)) != PECA_P)
+            *(origem + (COLUNA - 1)) = SEM_PECA;
+        else if(*(origem + (COLUNA - 1)) == PECA_B)
+            vApagarMovimentosPossiveis((origem + (COLUNA - 1)));
+        if(*(origem + (COLUNA + 1)) != PECA_B && *(origem + (COLUNA + 1)) != PECA_P)
+            *(origem + (COLUNA + 1)) = SEM_PECA;
+        else if(*(origem + (COLUNA + 1)) == PECA_B)
+            vApagarMovimentosPossiveis((origem + (COLUNA + 1)));
     }
+}
 
-    
+void vApagarPecasInimigas(char *origem, char *destino){
+    int iDistancia = abs(destino - origem);
 
+    if(iDistancia > (COLUNA + 1)){
+        if(gcTurno == PECA_B){
+            if(destino == (origem - (COLUNA - 1) * 2))
+                *(origem - (COLUNA - 1)) = SEM_PECA; 
+            else if(destino == (origem - (COLUNA + 1) * 2))
+                *(origem - (COLUNA + 1)) = SEM_PECA;
+        }
+        else{
+            if(destino == (origem + (COLUNA - 1) * 2))
+                *(origem + (COLUNA - 1)) = SEM_PECA; 
+            else if(destino == (origem + (COLUNA + 1) * 2))
+                *(origem + (COLUNA + 1)) = SEM_PECA;
+        }
+    }   
 }
 
 void vMoverPeca(char *origem, char *destino){
     vApagarMovimentosPossiveis(origem);
     *destino = gcTurno;
     *origem  = SEM_PECA;
+    vApagarPecasInimigas(origem, destino);
+    
 
 
 }
