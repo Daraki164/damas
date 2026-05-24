@@ -55,25 +55,8 @@ int main(){
         }
 
         vMoverPeca(pOrigem, pcDestino(atoi(szEntrada)));
-        vExibirTabuleiro();
-
-        // *(piSelecionarPeca(atoi(szEntrada)) - COLUNA) = 'X';
-
-//===================continuar====================================
-        // printf("%c | 0X%X\n", *piSelecionarPeca(atoi(szEntrada)), piSelecionarPeca(atoi(szEntrada)));
-        // fgets(szEntrada, sizeof(szEntrada), stdin);
-
-
-/*===============================================
-        TODO: função de log
-        /*freopen("Damas.log", "a", stdout);
-        fflush(stdout);
-        fclose(stdout);
-        1 |B | 0X9579E068
-        1 |P | 0X9579E041
-===============================================*/
-
-
+   
+        vChecarDamas();
         vTrocarTurnos();
         system("clear"); 
     }
@@ -83,7 +66,20 @@ int main(){
 }
 //=================cotinuar==================================
 //logiga de escolha chumbada9
+void vChecarDamas(){
+    int ii = 0;
 
+    if(gcTurno == PECA_B){
+        for(; ii < COLUNA; ii++)
+            if(gacTabuleiro[0][ii] == PECA_B)
+                gacTabuleiro[0][ii] = DAMA_B;
+    }
+    else{
+        for(; ii < COLUNA; ii++)
+            if(gacTabuleiro[7][ii] == PECA_P)
+                gacTabuleiro[7][ii] = DAMA_P;
+    }
+}
 
 char *pcDestino(int escolha){  
     int ii;
@@ -99,6 +95,7 @@ char *pcDestino(int escolha){
 //função recursiva
 int iMovimentosPossiveis(char *origem, int iQtdMovimentos){
     char *pcInicioTabuleiro = &gacTabuleiro[0][0];
+    char *pcFinalTabuleiro  = &gacTabuleiro[7][7];
     char *pcDiagonal1       = NULL;
     char *pcDiagonal2       = NULL;
 
@@ -112,14 +109,16 @@ int iMovimentosPossiveis(char *origem, int iQtdMovimentos){
         pcDiagonal1 = (origem - iDiag1);
         pcDiagonal2 = (origem - iDiag2);
 
-        if(iBorda != 0 && *pcDiagonal1 == SEM_PECA)
+        if(pcDiagonal1 < pcInicioTabuleiro);
+        else if(iBorda != 0 && *pcDiagonal1 == SEM_PECA)
             *pcDiagonal1 = '0'+iQtdMovimentos++;
         else if(*pcDiagonal1 == PECA_P && *origem != PECA_P){
             iBorda = (pcDiagonal1 - pcInicioTabuleiro) % 8;
             if(iBorda != 0 && *(pcDiagonal1 - iDiag1) == SEM_PECA)
                 *(pcDiagonal1 - iDiag1) = '0'+iQtdMovimentos++;
         }
-        if(iBorda != 7 && *(pcDiagonal2) == SEM_PECA)
+        if(pcDiagonal2 < pcInicioTabuleiro);
+        else if(iBorda != 7 && *(pcDiagonal2) == SEM_PECA)
             *(pcDiagonal2) = '0'+iQtdMovimentos++;
         else if(*(pcDiagonal2) == PECA_P && *origem != PECA_P){
             iBorda = (pcDiagonal2 - pcInicioTabuleiro) % 8;
@@ -131,14 +130,16 @@ int iMovimentosPossiveis(char *origem, int iQtdMovimentos){
         pcDiagonal1 = (origem + iDiag1);
         pcDiagonal2 = (origem + iDiag2);
 
-        if(iBorda != 0 && *(pcDiagonal2) == SEM_PECA)
+        if(pcDiagonal2 > pcFinalTabuleiro);
+        else if(iBorda != 0 && *(pcDiagonal2) == SEM_PECA)
             *(pcDiagonal2) = '0'+iQtdMovimentos++;
         else if(*(pcDiagonal2) == PECA_B && *origem != PECA_B){
             iBorda = (pcDiagonal2 - pcInicioTabuleiro) % 8;
             if(iBorda != 0 && *(pcDiagonal2 + iDiag2) == SEM_PECA)
                 *(pcDiagonal2 + iDiag2) = '0'+iQtdMovimentos++;
         } 
-        if(iBorda != 7 && *(pcDiagonal1) == SEM_PECA)
+        if(pcDiagonal1 > pcFinalTabuleiro);
+        else if(iBorda != 7 && *(pcDiagonal1) == SEM_PECA)
             *(pcDiagonal1) = '0'+iQtdMovimentos++;
         else if(*(pcDiagonal1) == PECA_B && *origem != PECA_B){
             iBorda = (pcDiagonal1 - pcInicioTabuleiro) % 8;
@@ -212,7 +213,12 @@ char *piSelecionarPeca(int sequencia){
 
     for(ii = 0; ii<LINHA; ii++){
         for(jj = 0; jj<COLUNA; jj++){
-            if(gcTurno == gacTabuleiro[ii][jj]) ik++;
+            if(gcTurno == PECA_B 
+               && (gacTabuleiro[ii][jj] == PECA_B || gacTabuleiro[ii][jj] == DAMA_B)) 
+               ik++;
+            else if(gcTurno == PECA_P
+               && (gacTabuleiro[ii][jj] == PECA_P || gacTabuleiro[ii][jj] == DAMA_P))
+               ik++;
             if(sequencia == ik){
                 gacTabuleiro[ii][jj] = 'X';
                 return &gacTabuleiro[ii][jj];
@@ -260,7 +266,12 @@ void vExibirTabuleiro(){
 
     for(ii = 0; ii<LINHA; ii++){
         for(jj = 0; jj<COLUNA; jj++)
-            printf("|%c%c|", gacTabuleiro[ii][jj], ' ');
+            if(gacTabuleiro[ii][jj] == DAMA_B)
+                printf("|BB|");
+            else if(gacTabuleiro[ii][jj] == DAMA_P)
+                printf("|PP|");
+            else
+                printf("|%c%c|", gacTabuleiro[ii][jj], ' ');
         
         printf("\n");       
     }
@@ -272,16 +283,29 @@ void vExibirTabuleiroTurno(){
     int ik = 1;
     
     for(ii = 0; ii<LINHA; ii++){
-        for(jj = 0; jj<COLUNA; jj++) 
-            printf("|%c%c|", gacTabuleiro[ii][jj], ' ');
+        for(jj = 0; jj<COLUNA; jj++)
+            if(gacTabuleiro[ii][jj] == DAMA_B)
+                printf("|BB|");
+            else if(gacTabuleiro[ii][jj] == DAMA_P)
+                printf("|PP|");
+            else
+                printf("|%c%c|", gacTabuleiro[ii][jj], ' ');
             
         printf("\n");       
     }
     printf("\n");
     for(ii = 0; ii<LINHA; ii++){
         for(jj = 0; jj<COLUNA; jj++){
-            if(gcTurno == gacTabuleiro[ii][jj])
+            if(gcTurno == PECA_B 
+               && (gacTabuleiro[ii][jj] == PECA_B || gacTabuleiro[ii][jj] == DAMA_B))
                 printf("|%02i|", ik++);
+            else if(gcTurno == PECA_P
+               && (gacTabuleiro[ii][jj] == PECA_P || gacTabuleiro[ii][jj] == DAMA_P))
+                printf("|%02i|", ik++);
+            else if(gacTabuleiro[ii][jj] == DAMA_B)
+                printf("|BB|");
+            else if(gacTabuleiro[ii][jj] == DAMA_P)
+                printf("|PP|");
             else
                 printf("|%c%c|", gacTabuleiro[ii][jj], ' ');
 
